@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import sqlite3
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 from get_cookies import get_gg_deals_session
@@ -8,6 +9,7 @@ from get_cookies import get_gg_deals_session
 BASE_URL = "https://gg.deals"
 LIST_URL = f"{BASE_URL}/deals/new-deals/"
 KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
+DB_FILE = "listing_data.db"  # SQLite database file
 
 # Settings
 filter_mode = True  # Toggle DRM filtering on/off
@@ -25,6 +27,41 @@ SESSION_COOKIES = {
 # Global variable for tracking the last check
 last_check = datetime.now(timezone.utc)
 
+
+# Database Functions
+def initialize_database():
+    """Create the database and table if they do not exist."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS listings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            drm TEXT NOT NULL,
+            price REAL NOT NULL,
+            created_at TEXT NOT NULL,
+            url TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def save_to_database(game_id, name, drm, price, url):
+    """Save a new listing to the database."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+        INSERT INTO listings (game_id, name, drm, price, created_at, url)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (game_id, name, drm, price, created_at, url))
+    conn.commit()
+    conn.close()
+
+
+# Extract Functions
 def extract_drm_from_listing(listing_html):
     """Extract DRM from the listing HTML."""
     soup = BeautifulSoup(listing_html, 'html.parser')
@@ -34,6 +71,7 @@ def extract_drm_from_listing(listing_html):
         if svg_tag and "title" in svg_tag.attrs:
             return svg_tag["title"].replace("Activates on ", "").strip()
     return None
+
 
 def extract_listing_details(listing_html):
     """Extract additional details (game name, URL, price) from a listing."""
@@ -54,22 +92,14 @@ def extract_listing_details(listing_html):
     return game_name, listing_url, float(price) if price else None
 
 
-def extract_keyshop_drm(keyshop_html):
-    """Extract DRM from the keyshop HTML."""
-    soup = BeautifulSoup(keyshop_html, 'html.parser')
-    drm_tag = soup.find("div", class_="tag-drm")
-    if drm_tag:
-        svg_tag = drm_tag.find("svg")
-        if svg_tag and "title" in svg_tag.attrs:
-            return svg_tag["title"].replace("Activates on ", "").strip()
-    return None
-
+# Main Logic
 async def fetch_html(session, url):
     async with session.get(url) as response:
         if response.status != 200:
             print(f"Failed to fetch {url}")
             return None
         return await response.text()
+
 
 async def fetch_listings(session):
     html_content = await fetch_html(session, LIST_URL)
@@ -136,7 +166,7 @@ async def fetch_keyshops(session, game_id, listing_drm):
         for shop in keyshop_divs:
             shop_name = shop.get('data-shop-name', '').lower()
             price = shop.get('data-deal-value')
-            drm = extract_keyshop_drm(str(shop))
+            drm = extract_drm_from_listing(str(shop))
 
             if not drm or drm != listing_drm:
                 continue
@@ -148,6 +178,7 @@ async def fetch_keyshops(session, game_id, listing_drm):
 
         return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
 
+
 async def process_listing(session, listing):
     game_id = listing["game_id"]
     game_name = listing["game_name"]
@@ -155,21 +186,18 @@ async def process_listing(session, listing):
     listing_url = listing["listing_url"]
     current_price = listing["current_price"]
 
+    # Save to database
+    save_to_database(game_id, game_name, drm, current_price, listing_url)
+    print(f"Saved listing: {game_name} ({drm}, {current_price})")
+
+    # Fetch and print keyshop prices
     keyshop_data = await fetch_keyshops(session, game_id, drm)
-    if not keyshop_data:
-        print(f"Skipping {game_name} due to missing keyshop data.")
-        return
-
-    kinguin_price = keyshop_data['kinguin_price']
-    g2a_price = keyshop_data['g2a_price']
-
-    if not kinguin_price and not g2a_price:
-        print(f"Skipping {game_name}: No valid keyshops (Kinguin or G2A).")
-        return
-
-    print(f"Game: {game_name}, DRM: {drm}, Price: {current_price}, URL: {listing_url}")
-    print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}")
-    print(f"Notify: Found deal for {game_name}")
+    if keyshop_data:
+        kinguin_price = keyshop_data['kinguin_price']
+        g2a_price = keyshop_data['g2a_price']
+        print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
+    else:
+        print(f"No keyshop data for {game_name}")
 
 async def check_new_listings():
     global last_check
@@ -190,5 +218,7 @@ async def check_new_listings():
             last_check = datetime.now(timezone.utc)
             await asyncio.sleep(30)
 
+
 if __name__ == "__main__":
+    initialize_database()
     asyncio.run(check_new_listings())
