@@ -3,17 +3,31 @@ import asyncio
 import sqlite3
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
+from configparser import ConfigParser
+from discord_notification import send_discord_notification
 from get_cookies import get_gg_deals_session
+from tax_calculations import calculate_profit, get_exchange_rates
+import pygame
+
+# Load settings
+config = ConfigParser()
+config.read("settings.ini")
+
+# Extract settings
+REFRESH_RATE = int(config["GENERAL"]["refresh_rate"])
+MIN_PROFIT = float(config["GENERAL"]["min_profit"])
+MIN_PRICE = float(config["GENERAL"]["min_price"])
+SOUND_PROFIT = float(config["GENERAL"]["sound_profit"])
+
+# Initialize pygame for sound notifications
+pygame.init()
+NOTIFICATION_SOUND = "notification_sound.mp3"
 
 # Constants
 BASE_URL = "https://gg.deals"
 LIST_URL = f"{BASE_URL}/deals/new-deals/"
 KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
 DB_FILE = "listing_data.db"  # SQLite database file
-
-# Settings
-filter_mode = True  # Toggle DRM filtering on/off
-allowed_drms = ["Steam", "Battle.net"]  # DRMs to focus on when filter_mode is True
 
 # Initialize cookies and CSRF token
 gg_session, gg_csrf, csrf_token = get_gg_deals_session()
@@ -23,9 +37,6 @@ SESSION_COOKIES = {
     "gg-session": gg_session,
     "gg_csrf": gg_csrf
 }
-
-# Global variable for tracking the last check
-last_check = datetime.now(timezone.utc)
 
 
 # Database Functions
@@ -61,7 +72,7 @@ def save_to_database(game_id, name, drm, price, url):
     conn.close()
 
 
-# Extract Functions
+# Helper Functions
 def extract_drm_from_listing(listing_html):
     """Extract DRM from the listing HTML."""
     soup = BeautifulSoup(listing_html, 'html.parser')
@@ -92,7 +103,7 @@ def extract_listing_details(listing_html):
     return game_name, listing_url, float(price) if price else None
 
 
-# Main Logic
+# Fetch Functions
 async def fetch_html(session, url):
     async with session.get(url) as response:
         if response.status != 200:
@@ -119,11 +130,6 @@ async def fetch_listings(session):
         if not drm:
             continue
 
-        # Apply DRM filter if filter_mode is enabled
-        if filter_mode and drm not in allowed_drms:
-            print(f"Skipping {game_name} due to DRM ({drm}) not in allowed DRMs.")
-            continue
-
         time_tag = listing.find('time')
         if not time_tag:
             continue
@@ -142,6 +148,7 @@ async def fetch_listings(session):
 
 
 async def fetch_keyshops(session, game_id, listing_drm):
+    """Fetch keyshop prices for a game."""
     keyshop_url = KEYSHOP_URL_TEMPLATE.format(game_id=game_id)
     payload = {'gg_csrf': csrf_token}
     headers = {
@@ -156,6 +163,7 @@ async def fetch_keyshops(session, game_id, listing_drm):
     async with session.post(keyshop_url, data=payload, headers=headers, cookies=SESSION_COOKIES) as response:
         if response.status != 200:
             print(f"Failed to fetch keyshops for game ID {game_id}, status: {response.status}")
+            print(f"Response: {await response.text()}")  # Debug the response
             return None
 
         html_content = await response.text()
@@ -179,7 +187,9 @@ async def fetch_keyshops(session, game_id, listing_drm):
         return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
 
 
+
 async def process_listing(session, listing):
+    """Process a single listing."""
     game_id = listing["game_id"]
     game_name = listing["game_name"]
     drm = listing["drm"]
@@ -190,33 +200,75 @@ async def process_listing(session, listing):
     save_to_database(game_id, game_name, drm, current_price, listing_url)
     print(f"Saved listing: {game_name} ({drm}, {current_price})")
 
-    # Fetch and print keyshop prices
+    # Fetch keyshop prices
     keyshop_data = await fetch_keyshops(session, game_id, drm)
-    if keyshop_data:
-        kinguin_price = keyshop_data['kinguin_price']
-        g2a_price = keyshop_data['g2a_price']
-        print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
-    else:
+    if not keyshop_data:
         print(f"No keyshop data for {game_name}")
+        return
+
+    kinguin_price = keyshop_data['kinguin_price']
+    g2a_price = keyshop_data['g2a_price']
+    print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
+
+    # Fetch exchange rates
+    exchange_rates = get_exchange_rates()
+    usd_to_pln = exchange_rates[1]
+
+    # Convert prices to PLN
+    current_price_pln = current_price * usd_to_pln
+    kinguin_price_pln = kinguin_price * usd_to_pln if kinguin_price else None
+    g2a_price_pln = g2a_price * usd_to_pln if g2a_price else None
+
+    # Calculate profits
+    kinguin_profit = (
+        calculate_profit(kinguin_price_pln, "Kinguin", exchange_rates) - current_price_pln
+        if kinguin_price_pln
+        else None
+    )
+    g2a_profit = (
+        calculate_profit(g2a_price_pln, "G2A", exchange_rates) - current_price_pln
+        if g2a_price_pln
+        else None
+    )
+
+    # Debugging profit values
+    print(f"Debug: {game_name} | Current Price PLN: {current_price_pln:.2f} | Kinguin Profit: {kinguin_profit} | G2A Profit: {g2a_profit}")
+
+    # Determine if a Discord notification should be sent
+    if max(kinguin_profit or 0, g2a_profit or 0) >= MIN_PROFIT:
+        send_discord_notification({
+            "name": game_name,
+            "game_id": game_id,
+            "price": current_price,
+            "kinguin_price": kinguin_price,
+            "g2a_price": g2a_price,
+            "drm": drm,
+            "listing_url": listing_url
+        })
+
+    # Sound notification for high profits
+    max_profit = max(kinguin_profit or 0, g2a_profit or 0)
+    if max_profit >= SOUND_PROFIT:
+        print(f"Sound Triggered: {game_name} | Max Profit: {max_profit:.2f}")
+        pygame.mixer.Sound(NOTIFICATION_SOUND).play()
+    else:
+        print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} (Below {SOUND_PROFIT})")
+
+
+
+
 
 async def check_new_listings():
-    global last_check
+    """Check for new listings and process them."""
     async with aiohttp.ClientSession() as session:
         while True:
             listings = await fetch_listings(session)
-            
-            # Debugging: Use a fixed timedelta threshold
-            threshold_time = datetime.now(timezone.utc) - timedelta(minutes=90)
-            new_listings = [
-                listing for listing in listings
-                if listing["listing_time"] > threshold_time
-            ]
+            new_listings = [l for l in listings if l["current_price"] >= MIN_PRICE]
 
             tasks = [process_listing(session, listing) for listing in new_listings]
             await asyncio.gather(*tasks)
 
-            last_check = datetime.now(timezone.utc)
-            await asyncio.sleep(30)
+            await asyncio.sleep(REFRESH_RATE)
 
 
 if __name__ == "__main__":

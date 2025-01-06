@@ -79,19 +79,21 @@ def send_discord_notification(listing, db_path="listing_data.db"):
 
     # Prepare the embed payload
     embed = {
-        "title": listing["name"],
-        "url": listing["listing_url"],
-        "fields": [
-            {"name": "Current Price", "value": f"```css\n{current_price_pln:.2f} zł\n```", "inline": True},
-            {"name": "Kinguin Price", "value": f"```css\n{kinguin_price_pln:.2f} zł\n```" if kinguin_price_pln else "N/A", "inline": True},
-            {"name": "G2A Price", "value": f"```css\n{g2a_price_pln:.2f} zł\n```" if g2a_price_pln else "N/A", "inline": True},
-            {"name": "Kinguin Profit", "value": f"```diff\n+{kinguin_profit:.2f} zł\n```" if kinguin_profit else "N/A", "inline": True},
-            {"name": "G2A Profit", "value": f"```diff\n+{g2a_profit:.2f} zł\n```" if g2a_profit else "N/A", "inline": True},
-            {"name": "Platform", "value": platform_emoji, "inline": True},
-            {"name": "Average Price", "value": f"```ini\n{avg_price:.2f} zł\n```" if avg_price else "N/A", "inline": True},
-            {"name": "Last 10 Prices", "value": last_10_prices_str, "inline": False}
-        ]
-    }
+    "title": listing["name"],
+    "url": listing["listing_url"],
+    "fields": [
+        {"name": "Current Price", "value": f"```css\n{current_price_pln:.2f} zł\n```", "inline": True},
+        {"name": "Kinguin Price", "value": f"```css\n{kinguin_price_pln:.2f} zł\n```" if kinguin_price_pln else "N/A", "inline": True},
+        {"name": "G2A Price", "value": f"```css\n{g2a_price_pln:.2f} zł\n```" if g2a_price_pln else "N/A", "inline": True},
+        {"name": "Kinguin Profit", "value": f"```diff\n{'+ ' if kinguin_profit > 0 else ''}{kinguin_profit:.2f} zł\n```" if kinguin_profit is not None else "N/A", "inline": True},
+        {"name": "G2A Profit", "value": f"```diff\n{'+ ' if g2a_profit > 0 else ''}{g2a_profit:.2f} zł\n```" if g2a_profit is not None else "N/A", "inline": True},
+        {"name": "Platform", "value": platform_emoji, "inline": True},
+        {"name": "Average Price", "value": f"```ini\n{avg_price:.2f} zł\n```" if avg_price else "N/A", "inline": True},
+        {"name": "Last 10 Prices", "value": last_10_prices_str, "inline": False}
+    ]
+}
+
+
 
     data = {
         "content": None,
