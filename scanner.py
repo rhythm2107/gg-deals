@@ -186,8 +186,6 @@ async def fetch_keyshops(session, game_id, listing_drm):
 
         return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
 
-
-
 async def process_listing(session, listing):
     """Process a single listing."""
     game_id = listing["game_id"]
@@ -254,10 +252,6 @@ async def process_listing(session, listing):
     else:
         print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} (Below {SOUND_PROFIT})")
 
-
-
-
-
 async def check_new_listings():
     """Check for new listings and process them."""
     async with aiohttp.ClientSession() as session:
@@ -268,8 +262,10 @@ async def check_new_listings():
             tasks = [process_listing(session, listing) for listing in new_listings]
             await asyncio.gather(*tasks)
 
+            # Print message before sleep
+            print(f"Iteration finished, starting again in {REFRESH_RATE} seconds.")
+            
             await asyncio.sleep(REFRESH_RATE)
-
 
 if __name__ == "__main__":
     initialize_database()
