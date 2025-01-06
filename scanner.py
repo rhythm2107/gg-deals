@@ -35,6 +35,25 @@ def extract_drm_from_listing(listing_html):
             return svg_tag["title"].replace("Activates on ", "").strip()
     return None
 
+def extract_listing_details(listing_html):
+    """Extract additional details (game name, URL, price) from a listing."""
+    soup = BeautifulSoup(listing_html, 'html.parser')
+
+    # Full game name and URL
+    link_tag = soup.find("a", class_="full-link")
+    if link_tag:
+        game_name = link_tag.get("aria-label", "").replace("Go to: ", "").strip()
+        listing_url = BASE_URL + link_tag.get("href", "")
+    else:
+        game_name = "Unknown Game"
+        listing_url = None
+
+    # Current price
+    price = soup.find("div", class_="hoverable-box").get("data-deal-value", None)
+
+    return game_name, listing_url, float(price) if price else None
+
+
 def extract_keyshop_drm(keyshop_html):
     """Extract DRM from the keyshop HTML."""
     soup = BeautifulSoup(keyshop_html, 'html.parser')
@@ -62,9 +81,10 @@ async def fetch_listings(session):
 
     extracted_listings = []
     for listing in listings:
+        listing_html = str(listing)
         game_id = listing.get('data-container-game-id')
-        game_name = listing.get('data-game-name', 'Unknown Game')
-        drm = extract_drm_from_listing(str(listing))
+        drm = extract_drm_from_listing(listing_html)
+        game_name, listing_url, price = extract_listing_details(listing_html)
 
         if not drm:
             continue
@@ -82,11 +102,14 @@ async def fetch_listings(session):
         extracted_listings.append({
             "game_id": game_id,
             "game_name": game_name,
+            "listing_url": listing_url,
+            "current_price": price,
             "listing_time": listing_time,
             "drm": drm
         })
 
     return extracted_listings
+
 
 async def fetch_keyshops(session, game_id, listing_drm):
     keyshop_url = KEYSHOP_URL_TEMPLATE.format(game_id=game_id)
@@ -129,6 +152,8 @@ async def process_listing(session, listing):
     game_id = listing["game_id"]
     game_name = listing["game_name"]
     drm = listing["drm"]
+    listing_url = listing["listing_url"]
+    current_price = listing["current_price"]
 
     keyshop_data = await fetch_keyshops(session, game_id, drm)
     if not keyshop_data:
@@ -142,7 +167,8 @@ async def process_listing(session, listing):
         print(f"Skipping {game_name}: No valid keyshops (Kinguin or G2A).")
         return
 
-    print(f"Game: {game_name}, DRM: {drm}, Kinguin: {kinguin_price}, G2A: {g2a_price}")
+    print(f"Game: {game_name}, DRM: {drm}, Price: {current_price}, URL: {listing_url}")
+    print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}")
     print(f"Notify: Found deal for {game_name}")
 
 async def check_new_listings():
@@ -152,7 +178,7 @@ async def check_new_listings():
             listings = await fetch_listings(session)
             
             # Debugging: Use a fixed timedelta threshold
-            threshold_time = datetime.now(timezone.utc) - timedelta(minutes=42)
+            threshold_time = datetime.now(timezone.utc) - timedelta(minutes=90)
             new_listings = [
                 listing for listing in listings
                 if listing["listing_time"] > threshold_time
