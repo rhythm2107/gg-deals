@@ -106,16 +106,16 @@ def send_discord_notification(listing, db_path="listing_data.db"):
         print(f"Failed to send notification: {response.status_code}, {response.text}")
 
 
-# Sample listing for testing
-sample_listing = {
-    "name": "Craft The World",
-    "game_id": 2074,
-    "price": 8,  # Current price in USD
-    "kinguin_price": 10,  # Kinguin price in USD
-    "g2a_price": 12,  # G2A price in USD
-    "drm": "Steam",  # DRM platform
-    "listing_url": "https://gg.deals/game/craft-the-world/"
-}
+# # Sample listing for testing
+# sample_listing = {
+#     "name": "Craft The World",
+#     "game_id": 2074,
+#     "price": 8,  # Current price in USD
+#     "kinguin_price": 10,  # Kinguin price in USD
+#     "g2a_price": 12,  # G2A price in USD
+#     "drm": "Steam",  # DRM platform
+#     "listing_url": "https://gg.deals/game/craft-the-world/"
+# }
 
-# Call the function to test it
-send_discord_notification(sample_listing)
+# # Call the function to test it
+# send_discord_notification(sample_listing)
