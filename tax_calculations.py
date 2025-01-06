@@ -5,7 +5,7 @@ from tax_settings import TAX_SETTINGS
 import requests
 
 CACHE_FILE = "exchange_rates.json"
-CACHE_DURATION_HOURS = 8
+CACHE_DURATION_HOURS = 24
 
 def get_exchange_rates():
     """Fetch or retrieve cached exchange rates for EUR/USD and USD/PLN."""
