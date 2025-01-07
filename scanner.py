@@ -56,6 +56,10 @@ async def fetch_listings(session):
     if not html_content:
         return []
 
+    # Get exchange rates and calculate USD-to-PLN
+    exchange_rates = get_exchange_rates()
+    usd_to_pln = exchange_rates[1]
+
     soup = BeautifulSoup(html_content, 'html.parser')
     listings = soup.find_all('div', class_='hoverable-box')
 
@@ -74,16 +78,21 @@ async def fetch_listings(session):
             continue
 
         listing_time = datetime.fromisoformat(time_tag['datetime']).astimezone(timezone.utc)
+
+        # Convert current price to PLN
+        current_price_pln = price * usd_to_pln
+
         extracted_listings.append({
             "game_id": game_id,
             "game_name": game_name,
             "listing_url": listing_url,
-            "current_price": price,
+            "current_price": current_price_pln,  # Store price in PLN
             "listing_time": listing_time,
             "drm": drm
         })
 
     return extracted_listings
+
 
 
 async def fetch_keyshops(session, game_id, listing_drm, retries=3):
@@ -139,11 +148,20 @@ async def process_listing(session, listing):
     game_name = listing["game_name"]
     drm = listing["drm"]
     listing_url = listing["listing_url"]
-    current_price = listing["current_price"]
+    current_price = listing["current_price"]  # Already in PLN
+
+    # Get exchange rates and calculate USD-to-PLN
+    exchange_rates = get_exchange_rates()
+    usd_to_pln = exchange_rates[1]
+    
+    # Ensure the current price meets the minimum price criteria
+    if current_price < MIN_PRICE:
+        print(f"Skipping {game_name} due to price below MIN_PRICE: {current_price:.2f} PLN")
+        return
 
     # Save to database
     save_to_database(game_id, game_name, drm, current_price, listing_url)
-    print(f"Saved listing: {game_name} ({drm}, {current_price})")
+    print(f"Saved listing: {game_name} ({drm}, {current_price:.2f} PLN)")
 
     # Fetch keyshop prices
     keyshop_data = await fetch_keyshops(session, game_id, drm)
@@ -155,38 +173,33 @@ async def process_listing(session, listing):
     g2a_price = keyshop_data['g2a_price']
     print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
 
-    # Fetch exchange rates
-    exchange_rates = get_exchange_rates()
-    usd_to_pln = exchange_rates[1]
-
-    # Convert prices to PLN
-    current_price_pln = current_price * usd_to_pln
+    # Convert keyshop prices to PLN
     kinguin_price_pln = kinguin_price * usd_to_pln if kinguin_price else None
     g2a_price_pln = g2a_price * usd_to_pln if g2a_price else None
 
     # Calculate profits
     kinguin_profit = (
-        calculate_profit(kinguin_price_pln, "Kinguin", exchange_rates) - current_price_pln
+        calculate_profit(kinguin_price_pln, "Kinguin", exchange_rates) - current_price
         if kinguin_price_pln
         else None
     )
     g2a_profit = (
-        calculate_profit(g2a_price_pln, "G2A", exchange_rates) - current_price_pln
+        calculate_profit(g2a_price_pln, "G2A", exchange_rates) - current_price
         if g2a_price_pln
         else None
     )
 
     # Debugging profit values
-    print(f"Debug: {game_name} | Current Price PLN: {current_price_pln:.2f} | Kinguin Profit: {kinguin_profit} | G2A Profit: {g2a_profit}")
+    print(f"Debug: {game_name} | Current Price PLN: {current_price:.2f} | Kinguin Profit: {kinguin_profit} | G2A Profit: {g2a_profit}")
 
     # Determine if a Discord notification should be sent
     if max(kinguin_profit or 0, g2a_profit or 0) >= MIN_PROFIT:
         send_discord_notification({
             "name": game_name,
             "game_id": game_id,
-            "price": current_price,
-            "kinguin_price": kinguin_price,
-            "g2a_price": g2a_price,
+            "price": current_price,  # Send price in PLN
+            "kinguin_price": kinguin_price_pln,
+            "g2a_price": g2a_price_pln,
             "drm": drm,
             "listing_url": listing_url
         })
@@ -194,10 +207,12 @@ async def process_listing(session, listing):
     # Sound notification for high profits
     max_profit = max(kinguin_profit or 0, g2a_profit or 0)
     if max_profit >= SOUND_PROFIT:
-        print(f"Sound Triggered: {game_name} | Max Profit: {max_profit:.2f}")
+        print(f"Sound Triggered: {game_name} | Max Profit: {max_profit:.2f} PLN")
         pygame.mixer.Sound(NOTIFICATION_SOUND).play()
     else:
-        print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} (Below {SOUND_PROFIT})")
+        print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} PLN (Below {SOUND_PROFIT})")
+
+
 
 async def check_new_listings():
     global last_check
@@ -208,7 +223,7 @@ async def check_new_listings():
             # Filter listings posted after the last check
             new_listings = [
                 listing for listing in listings
-                if listing["listing_time"] > last_check
+                if listing["listing_time"] > last_check and listing["current_price"] >= MIN_PRICE
             ]
 
             if new_listings:
