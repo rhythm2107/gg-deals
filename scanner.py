@@ -189,12 +189,12 @@ async def process_listing(session, listing):
         else None
     )
 
-    # Debugging profit values
-    print(
-    f"Debug: {game_name} | Current Price PLN: {current_price:.2f} | "
-    f"Kinguin Profit: {f'{kinguin_profit:.2f}' if kinguin_profit is not None else 'N/A'} | "
-    f"G2A Profit: {f'{g2a_profit:.2f}' if g2a_profit is not None else 'N/A'}"
-)
+#     # Debugging profit values
+#     print(
+#     f"Debug: {game_name} | Current Price PLN: {current_price:.2f} | "
+#     f"Kinguin Profit: {f'{kinguin_profit:.2f}' if kinguin_profit is not None else 'N/A'} | "
+#     f"G2A Profit: {f'{g2a_profit:.2f}' if g2a_profit is not None else 'N/A'}"
+# )
 
 
 
@@ -213,7 +213,7 @@ async def process_listing(session, listing):
     # Sound notification for high profits
     max_profit = max(kinguin_profit or 0, g2a_profit or 0)
     if max_profit >= SOUND_PROFIT:
-        print(f"Sound Triggered: {game_name} | Max Profit: {max_profit:.2f} PLN")
+        print(f"[Massive Profit!] {game_name} | Max Profit: {max_profit:.2f} PLN")
         pygame.mixer.Sound(NOTIFICATION_SOUND).play()
     # else:
     #     print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} PLN (Below {SOUND_PROFIT})")
