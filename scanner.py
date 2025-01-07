@@ -32,7 +32,7 @@ KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
 DB_FILE = "listing_data.db"  # SQLite database file
 
 # Global variable to track the last check time
-last_check = datetime.now(timezone.utc) - timedelta(minutes=35)  # Initialize to start 10 mins in the past
+last_check = datetime.now(timezone.utc) - timedelta(minutes=45)  # Initialize to start 10 mins in the past
 
 # Initialize cookies and CSRF token
 gg_session, gg_csrf, csrf_token = get_gg_deals_session()
@@ -153,7 +153,7 @@ async def process_listing(session, listing):
     # Get exchange rates and calculate USD-to-PLN
     exchange_rates = get_exchange_rates()
     usd_to_pln = exchange_rates[1]
-    
+
     # Ensure the current price meets the minimum price criteria
     if current_price < MIN_PRICE:
         print(f"Skipping {game_name} due to price below MIN_PRICE: {current_price:.2f} PLN")
@@ -171,7 +171,7 @@ async def process_listing(session, listing):
 
     kinguin_price = keyshop_data['kinguin_price']
     g2a_price = keyshop_data['g2a_price']
-    print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
+    # print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
 
     # Convert keyshop prices to PLN
     kinguin_price_pln = kinguin_price * usd_to_pln if kinguin_price else None
@@ -190,7 +190,13 @@ async def process_listing(session, listing):
     )
 
     # Debugging profit values
-    print(f"Debug: {game_name} | Current Price PLN: {current_price:.2f} | Kinguin Profit: {kinguin_profit} | G2A Profit: {g2a_profit}")
+    print(
+    f"Debug: {game_name} | Current Price PLN: {current_price:.2f} | "
+    f"Kinguin Profit: {f'{kinguin_profit:.2f}' if kinguin_profit is not None else 'N/A'} | "
+    f"G2A Profit: {f'{g2a_profit:.2f}' if g2a_profit is not None else 'N/A'}"
+)
+
+
 
     # Determine if a Discord notification should be sent
     if max(kinguin_profit or 0, g2a_profit or 0) >= MIN_PROFIT:
@@ -209,8 +215,8 @@ async def process_listing(session, listing):
     if max_profit >= SOUND_PROFIT:
         print(f"Sound Triggered: {game_name} | Max Profit: {max_profit:.2f} PLN")
         pygame.mixer.Sound(NOTIFICATION_SOUND).play()
-    else:
-        print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} PLN (Below {SOUND_PROFIT})")
+    # else:
+    #     print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} PLN (Below {SOUND_PROFIT})")
 
 
 
