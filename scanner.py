@@ -7,6 +7,7 @@ from configparser import ConfigParser
 from discord_notification import send_discord_notification
 from get_cookies import get_gg_deals_session
 from tax_calculations import calculate_profit, get_exchange_rates
+from database import initialize_database, save_to_database
 import pygame
 
 # Load settings
@@ -37,40 +38,6 @@ SESSION_COOKIES = {
     "gg-session": gg_session,
     "gg_csrf": gg_csrf
 }
-
-
-# Database Functions
-def initialize_database():
-    """Create the database and table if they do not exist."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS listings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id TEXT NOT NULL,
-            name TEXT NOT NULL,
-            drm TEXT NOT NULL,
-            price REAL NOT NULL,
-            created_at TEXT NOT NULL,
-            url TEXT NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-
-def save_to_database(game_id, name, drm, price, url):
-    """Save a new listing to the database."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("""
-        INSERT INTO listings (game_id, name, drm, price, created_at, url)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (game_id, name, drm, price, created_at, url))
-    conn.commit()
-    conn.close()
-
 
 # Helper Functions
 def extract_drm_from_listing(listing_html):
@@ -147,8 +114,8 @@ async def fetch_listings(session):
     return extracted_listings
 
 
-async def fetch_keyshops(session, game_id, listing_drm):
-    """Fetch keyshop prices for a game."""
+async def fetch_keyshops(session, game_id, listing_drm, retries=3):
+    """Fetch keyshop prices for a game with retry logic."""
     keyshop_url = KEYSHOP_URL_TEMPLATE.format(game_id=game_id)
     payload = {'gg_csrf': csrf_token}
     headers = {
@@ -160,31 +127,39 @@ async def fetch_keyshops(session, game_id, listing_drm):
         'x-requested-with': 'XMLHttpRequest'
     }
 
-    async with session.post(keyshop_url, data=payload, headers=headers, cookies=SESSION_COOKIES) as response:
-        if response.status != 200:
-            print(f"Failed to fetch keyshops for game ID {game_id}, status: {response.status}")
-            print(f"Response: {await response.text()}")  # Debug the response
-            return None
+    for attempt in range(retries):
+        try:
+            async with session.post(keyshop_url, data=payload, headers=headers, cookies=SESSION_COOKIES) as response:
+                if response.status == 200:
+                    html_content = await response.text()
+                    soup = BeautifulSoup(html_content, 'html.parser')
 
-        html_content = await response.text()
-        soup = BeautifulSoup(html_content, 'html.parser')
+                    keyshops = []
+                    keyshop_divs = soup.select('div[data-shop-name]')
+                    for shop in keyshop_divs:
+                        shop_name = shop.get('data-shop-name', '').lower()
+                        price = shop.get('data-deal-value')
+                        drm = extract_drm_from_listing(str(shop))
 
-        keyshops = []
-        keyshop_divs = soup.select('div[data-shop-name]')
-        for shop in keyshop_divs:
-            shop_name = shop.get('data-shop-name', '').lower()
-            price = shop.get('data-deal-value')
-            drm = extract_drm_from_listing(str(shop))
+                        if not drm or drm != listing_drm:
+                            continue
 
-            if not drm or drm != listing_drm:
-                continue
+                        keyshops.append({"name": shop_name, "price": float(price), "drm": drm})
 
-            keyshops.append({"name": shop_name, "price": float(price), "drm": drm})
+                    kinguin_price = next((shop['price'] for shop in keyshops if shop['name'] == 'kinguin'), None)
+                    g2a_price = next((shop['price'] for shop in keyshops if shop['name'] == 'g2a'), None)
 
-        kinguin_price = next((shop['price'] for shop in keyshops if shop['name'] == 'kinguin'), None)
-        g2a_price = next((shop['price'] for shop in keyshops if shop['name'] == 'g2a'), None)
+                    return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
 
-        return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
+                print(f"Attempt {attempt + 1}: Failed to fetch keyshops for game ID {game_id}, status: {response.status}")
+        except (aiohttp.ClientError, ConnectionResetError) as e:
+            print(f"Attempt {attempt + 1}: Connection error while fetching keyshops for game ID {game_id}: {e}")
+
+        await asyncio.sleep(1)  # Add a short delay between retries
+
+    print(f"Failed to fetch keyshops for game ID {game_id} after {retries} attempts.")
+    return None
+
 
 async def process_listing(session, listing):
     """Process a single listing."""
