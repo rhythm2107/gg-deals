@@ -32,7 +32,7 @@ KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
 DB_FILE = "listing_data.db"  # SQLite database file
 
 # Global variable to track the last check time
-last_check = datetime.now(timezone.utc) - timedelta(minutes=21)  # Initialize to start 10 mins in the past
+last_check = datetime.now(timezone.utc) - timedelta(minutes=35)  # Initialize to start 10 mins in the past
 
 # Initialize cookies and CSRF token
 gg_session, gg_csrf, csrf_token = get_gg_deals_session()
