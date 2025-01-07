@@ -1,6 +1,7 @@
 import requests
 import sqlite3
 from datetime import datetime
+from tax_calculations import calculate_profit, get_exchange_rates
 
 # Define Discord Webhook URL
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1325877605747921006/9_3qtzLplhBN5hllMsNYhdfxBL5AMHvR0evWVymXpi-7YKXkHgYQzHAsGr_VrLNStUoW"
@@ -46,21 +47,25 @@ def send_discord_notification(listing, db_path="listing_data.db"):
     """
     Send a notification to Discord for a given listing.
     """
-    # Prices are already in PLN, no conversion needed
+    # Fetch exchange rates
+    exchange_rates = get_exchange_rates()
+
+    # Prices are already in PLN
     current_price_pln = listing["price"]
     kinguin_price_pln = listing.get("kinguin_price")
     g2a_price_pln = listing.get("g2a_price")
 
-    # Calculate profits
-    kinguin_profit = None
-    g2a_profit = None
-
-    if kinguin_price_pln:
-        kinguin_profit = kinguin_price_pln - current_price_pln
-        
-
-    if g2a_price_pln:
-        g2a_profit = g2a_price_pln - current_price_pln
+    # Calculate profits using the tax formulas
+    kinguin_profit = (
+        calculate_profit(kinguin_price_pln, "Kinguin", exchange_rates) - current_price_pln
+        if kinguin_price_pln
+        else None
+    )
+    g2a_profit = (
+        calculate_profit(g2a_price_pln, "G2A", exchange_rates) - current_price_pln
+        if g2a_price_pln
+        else None
+    )
 
     # Fetch average price and last 10 prices from the database
     avg_price, last_10_prices = fetch_price_data(listing["game_id"], listing["drm"], db_path)
