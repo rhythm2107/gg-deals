@@ -31,6 +31,9 @@ LIST_URL = f"{BASE_URL}/deals/new-deals/"
 KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
 DB_FILE = "listing_data.db"  # SQLite database file
 
+# Global variable to track the last check time
+last_check = datetime.now(timezone.utc) - timedelta(minutes=21)  # Initialize to start 10 mins in the past
+
 # Initialize cookies and CSRF token
 gg_session, gg_csrf, csrf_token = get_gg_deals_session()
 
@@ -47,7 +50,6 @@ async def fetch_html(session, url):
             print(f"Failed to fetch {url}")
             return None
         return await response.text()
-
 
 async def fetch_listings(session):
     html_content = await fetch_html(session, LIST_URL)
@@ -198,19 +200,26 @@ async def process_listing(session, listing):
         print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} (Below {SOUND_PROFIT})")
 
 async def check_new_listings():
-    """Check for new listings and process them."""
+    global last_check
     async with aiohttp.ClientSession() as session:
         while True:
             listings = await fetch_listings(session)
-            new_listings = [l for l in listings if l["current_price"] >= MIN_PRICE]
+
+            # Filter listings posted after the last check
+            new_listings = [
+                listing for listing in listings
+                if listing["listing_time"] > last_check
+            ]
+
+            if new_listings:
+                # Update the last check time to the latest listing's time
+                last_check = max(l["listing_time"] for l in new_listings)
 
             tasks = [process_listing(session, listing) for listing in new_listings]
             await asyncio.gather(*tasks)
 
-            # Print message before sleep
-            print(f"Iteration finished, starting again in {REFRESH_RATE} seconds.")
-            
-            await asyncio.sleep(REFRESH_RATE)
+            print(f"Iteration finished, starting again in {REFRESH_RATE} seconds. Last check updated to {last_check}.")
+            await asyncio.sleep(REFRESH_RATE)  # Sleep for the refresh interval
 
 if __name__ == "__main__":
     initialize_database()
