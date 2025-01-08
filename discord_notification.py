@@ -3,6 +3,9 @@ import sqlite3
 from datetime import datetime
 from tax_calculations import calculate_profit, get_exchange_rates
 
+# Allowed DRMs
+allowed_drms = ["Steam", "Ubisoft Connect"]
+
 # Define Discord Webhook URL
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1325877605747921006/9_3qtzLplhBN5hllMsNYhdfxBL5AMHvR0evWVymXpi-7YKXkHgYQzHAsGr_VrLNStUoW"
 
@@ -98,7 +101,12 @@ def send_discord_notification(listing, db_path="listing_data.db"):
         "embeds": [embed]
     }
 
-    # Send the notification to Discord
-    response = requests.post(DISCORD_WEBHOOK_URL, json=data)
-    if response.status_code != 204:
-        print(f"Failed to send notification: {response.status_code}, {response.text}")
+    print(listing["drm"])
+
+    if listing["drm"] in allowed_drms:
+        # Send the notification to Discord
+        response = requests.post(DISCORD_WEBHOOK_URL, json=data)
+        if response.status_code != 204:
+            print(f"Failed to send notification: {response.status_code}, {response.text}")
+    else:
+        print(f"{listing["drm"]} is not in allowed list. Skipping!")
