@@ -1,9 +1,10 @@
 # Ignore all .log files
 *.log
 *.db
-urls_and_proxies.py
 __pycache__/
 db.sqlite3
 db.sqlite3-journal
 *.env
 listing_data.db
+__pycache__
+*.pyc
