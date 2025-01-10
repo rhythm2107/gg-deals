@@ -7,7 +7,7 @@ from tax_calculations import calculate_profit, get_exchange_rates
 allowed_drms = ["Steam", "Ubisoft Connect"]
 
 # Define Discord Webhook URL
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1325877605747921006/9_3qtzLplhBN5hllMsNYhdfxBL5AMHvR0evWVymXpi-7YKXkHgYQzHAsGr_VrLNStUoW"
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1355271759888126294/4QPFDei11Xyogm_6I0Purp72XIzeGa7OWXBjRU3-0PXJdNlV4HMYd3mKf7CWKnhg13gG"
 
 # Platform emojis for Discord notifications
 PLATFORM_EMOJIS = {
