@@ -3,27 +3,22 @@ import asyncio
 import sqlite3
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
-from configparser import ConfigParser
 from discord_notification import send_discord_notification
 from get_cookies import get_gg_deals_session
 from tax_calculations import calculate_profit, get_exchange_rates
 from database import initialize_database, save_to_database
 from extract import extract_drm_from_listing, extract_listing_details
 import pygame
-
-# Load settings
-config = ConfigParser()
-config.read("settings.ini")
-
-# Extract settings
-REFRESH_RATE = int(config["GENERAL"]["refresh_rate"])
-MIN_PROFIT = float(config["GENERAL"]["min_profit"])
-MIN_PRICE = float(config["GENERAL"]["min_price"])
-SOUND_PROFIT = float(config["GENERAL"]["sound_profit"])
+from modules.config import (
+    NOTIFICATION_SOUND,
+    REFRESH_RATE,
+    MIN_PROFIT,
+    MIN_PRICE,
+    SOUND_PROFIT
+)
 
 # Initialize pygame for sound notifications
 pygame.init()
-NOTIFICATION_SOUND = "notification_sound.mp3"
 
 # Constants
 BASE_URL = "https://gg.deals"
@@ -171,7 +166,6 @@ async def process_listing(session, listing):
 
     kinguin_price = keyshop_data['kinguin_price']
     g2a_price = keyshop_data['g2a_price']
-    # print(f"Kinguin: {kinguin_price}, G2A: {g2a_price}, [{game_name}]")
 
     # Convert keyshop prices to PLN
     kinguin_price_pln = kinguin_price * usd_to_pln if kinguin_price else None
@@ -188,15 +182,6 @@ async def process_listing(session, listing):
         if g2a_price_pln
         else None
     )
-
-#     # Debugging profit values
-#     print(
-#     f"Debug: {game_name} | Current Price PLN: {current_price:.2f} | "
-#     f"Kinguin Profit: {f'{kinguin_profit:.2f}' if kinguin_profit is not None else 'N/A'} | "
-#     f"G2A Profit: {f'{g2a_profit:.2f}' if g2a_profit is not None else 'N/A'}"
-# )
-
-
 
     # Determine if a Discord notification should be sent
     if max(kinguin_profit or 0, g2a_profit or 0) >= MIN_PROFIT:
@@ -215,9 +200,6 @@ async def process_listing(session, listing):
     if max_profit >= SOUND_PROFIT:
         print(f"[Massive Profit!] {game_name} | Max Profit: {max_profit:.2f} PLN")
         pygame.mixer.Sound(NOTIFICATION_SOUND).play()
-    # else:
-    #     print(f"Sound Skipped: {game_name} | Max Profit: {max_profit:.2f} PLN (Below {SOUND_PROFIT})")
-
 
 
 async def check_new_listings():
