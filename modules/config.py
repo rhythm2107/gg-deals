@@ -16,3 +16,4 @@ MIN_PRICE = float(config["GENERAL"]["min_price"])
 SOUND_PROFIT = float(config["GENERAL"]["sound_profit"])
 
 NOTIFICATION_SOUND = os.getenv("NOTIFICATION_SOUND")
+DB_FILE = os.getenv("DB_FILE")

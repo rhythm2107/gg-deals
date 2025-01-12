@@ -1,7 +1,6 @@
 import sqlite3
 from datetime import datetime
-
-DB_FILE = "listing_data.db"  # SQLite database file
+from modules.config import DB_FILE
 
 # Database Functions
 def initialize_database():

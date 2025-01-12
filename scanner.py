@@ -24,7 +24,6 @@ pygame.init()
 BASE_URL = "https://gg.deals"
 LIST_URL = f"{BASE_URL}/deals/new-deals/"
 KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
-DB_FILE = "listing_data.db"  # SQLite database file
 
 # Global variable to track the last check time
 last_check = datetime.now(timezone.utc) - timedelta(minutes=45)  # Initialize to start 10 mins in the past
