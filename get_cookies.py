@@ -2,13 +2,12 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-
-chromedriver_path = r"C:\Users\Rhythm\Desktop\chromedriver-win64\chromedriver.exe"
+from modules.config import CHROMEDRIVER_PATH
 
 def get_gg_deals_session():
     # Set up Selenium WebDriver
-    print(f"Using ChromeDriver Path: {chromedriver_path}")
-    service = Service(chromedriver_path)
+    print(f"Using ChromeDriver Path: {CHROMEDRIVER_PATH}")
+    service = Service(CHROMEDRIVER_PATH)
     options = webdriver.ChromeOptions()
     # Disable headless for debugging
     options.add_argument("--headless")
