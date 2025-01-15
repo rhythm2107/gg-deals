@@ -2,9 +2,7 @@ import requests
 import sqlite3
 from datetime import datetime
 from tax_calculations import calculate_profit, get_exchange_rates
-
-# Allowed DRMs
-allowed_drms = ["Steam", "Ubisoft Connect"]
+from modules.config import ALLOWED_DRMS
 
 # Define Discord Webhook URL
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1355271759888126294/4QPFDei11Xyogm_6I0Purp72XIzeGa7OWXBjRU3-0PXJdNlV4HMYd3mKf7CWKnhg13gG"
@@ -103,7 +101,7 @@ def send_discord_notification(listing, db_path="listing_data.db"):
 
     print(listing["drm"])
 
-    if listing["drm"] in allowed_drms:
+    if listing["drm"] in ALLOWED_DRMS:
         # Send the notification to Discord
         response = requests.post(DISCORD_WEBHOOK_URL, json=data)
         if response.status_code != 204:
