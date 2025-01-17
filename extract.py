@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
-
-BASE_URL = "https://gg.deals"
+from modules.config import BASE_URL
 
 # Helper Functions
 def extract_drm_from_listing(listing_html):

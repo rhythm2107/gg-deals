@@ -18,8 +18,7 @@ SOUND_PROFIT = float(config["GENERAL"]["sound_profit"])
 NOTIFICATION_SOUND = os.getenv("NOTIFICATION_SOUND")
 DB_FILE = os.getenv("DB_FILE")
 CHROMEDRIVER_PATH = os.getenv("CHROMEDRIVER_PATH")
+BASE_URL = os.getenv("BASE_URL")
 
 ALLOWED_DRMS = os.getenv("ALLOWED_DRMS", "")
 ALLOWED_DRMS = [drm.strip() for drm in ALLOWED_DRMS.split(",") if drm.strip()]
-
-print(type(ALLOWED_DRMS))
