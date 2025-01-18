@@ -3,9 +3,7 @@ import json
 from datetime import datetime, timedelta
 from tax_settings import TAX_SETTINGS
 import requests
-
-CACHE_FILE = "exchange_rates.json"
-CACHE_DURATION_HOURS = 24
+from modules.config import CACHE_DURATION_HOURS, CACHE_FILE
 
 def get_exchange_rates():
     """Fetch or retrieve cached exchange rates for EUR/USD and USD/PLN."""

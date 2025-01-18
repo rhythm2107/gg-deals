@@ -2,10 +2,7 @@ import requests
 import sqlite3
 from datetime import datetime
 from tax_calculations import calculate_profit, get_exchange_rates
-from modules.config import ALLOWED_DRMS
-
-# Define Discord Webhook URL
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1355271759888126294/4QPFDei11Xyogm_6I0Purp72XIzeGa7OWXBjRU3-0PXJdNlV4HMYd3mKf7CWKnhg13gG"
+from modules.config import ALLOWED_DRMS, DISCORD_WEBHOOK_URL
 
 # Platform emojis for Discord notifications
 PLATFORM_EMOJIS = {

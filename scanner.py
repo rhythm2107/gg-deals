@@ -14,14 +14,14 @@ from modules.config import (
     REFRESH_RATE,
     MIN_PROFIT,
     MIN_PRICE,
-    SOUND_PROFIT
+    SOUND_PROFIT,
+    BASE_URL
 )
 
 # Initialize pygame for sound notifications
 pygame.init()
 
 # Constants
-BASE_URL = "https://gg.deals"
 LIST_URL = f"{BASE_URL}/deals/new-deals/"
 KEYSHOP_URL_TEMPLATE = f"{BASE_URL}/pl/games/keyshopsDeals/{{game_id}}/"
 
