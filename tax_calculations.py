@@ -3,7 +3,12 @@ import json
 from datetime import datetime, timedelta
 from tax_settings import TAX_SETTINGS
 import requests
-from modules.config import CACHE_DURATION_HOURS, CACHE_FILE
+from modules.config import (
+    CACHE_DURATION_HOURS,
+    CACHE_FILE,
+    EUR_TO_USD_URL,
+    USD_TO_PLN_URL
+)
 
 def get_exchange_rates():
     """Fetch or retrieve cached exchange rates for EUR/USD and USD/PLN."""
@@ -17,11 +22,8 @@ def get_exchange_rates():
                 return cache_data["eur_to_usd"], cache_data["usd_to_pln"]
 
     # Fetch fresh rates if cache is missing or stale
-    eur_to_usd_url = "https://api.exchangerate-api.com/v4/latest/EUR"
-    usd_to_pln_url = "https://api.exchangerate-api.com/v4/latest/USD"
-
-    eur_to_usd_response = requests.get(eur_to_usd_url)
-    usd_to_pln_response = requests.get(usd_to_pln_url)
+    eur_to_usd_response = requests.get(EUR_TO_USD_URL)
+    usd_to_pln_response = requests.get(USD_TO_PLN_URL)
 
     if eur_to_usd_response.status_code != 200 or usd_to_pln_response.status_code != 200:
         raise Exception("Failed to fetch exchange rates.")

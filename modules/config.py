@@ -22,6 +22,8 @@ BASE_URL = os.getenv("BASE_URL")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 CACHE_DURATION_HOURS = os.getenv("CACHE_DURATION_HOURS")
 CACHE_FILE = os.getenv("CACHE_FILE")
+EUR_TO_USD_URL = os.getenv("EUR_TO_USD_URL")
+USD_TO_PLN_URL = os.getenv("USD_TO_PLN_URL")
 
 ALLOWED_DRMS = os.getenv("ALLOWED_DRMS", "")
 ALLOWED_DRMS = [drm.strip() for drm in ALLOWED_DRMS.split(",") if drm.strip()]
