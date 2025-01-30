@@ -7,7 +7,7 @@ load_dotenv()
 
 # Load settings
 config = ConfigParser()
-config.read("../settings.ini")
+config.read("./settings.ini")
 
 # Extract settings
 REFRESH_RATE = int(config["GENERAL"]["refresh_rate"])
@@ -20,7 +20,7 @@ DB_FILE = os.getenv("DB_FILE")
 CHROMEDRIVER_PATH = os.getenv("CHROMEDRIVER_PATH")
 BASE_URL = os.getenv("BASE_URL")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-CACHE_DURATION_HOURS = os.getenv("CACHE_DURATION_HOURS")
+CACHE_DURATION_HOURS = int(os.getenv("CACHE_DURATION_HOURS"))
 CACHE_FILE = os.getenv("CACHE_FILE")
 EUR_TO_USD_URL = os.getenv("EUR_TO_USD_URL")
 USD_TO_PLN_URL = os.getenv("USD_TO_PLN_URL")
