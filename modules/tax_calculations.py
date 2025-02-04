@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime, timedelta
-from tax_settings import TAX_SETTINGS
+from modules.tax_settings import TAX_SETTINGS
 import requests
 from modules.config import (
     CACHE_DURATION_HOURS,

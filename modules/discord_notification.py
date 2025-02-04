@@ -1,7 +1,7 @@
 import requests
 import sqlite3
 from datetime import datetime
-from tax_calculations import calculate_profit, get_exchange_rates
+from modules.tax_calculations import calculate_profit, get_exchange_rates
 from modules.config import ALLOWED_DRMS, DISCORD_WEBHOOK_URL
 
 # Platform emojis for Discord notifications

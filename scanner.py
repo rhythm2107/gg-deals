@@ -3,11 +3,11 @@ import asyncio
 import sqlite3
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
-from discord_notification import send_discord_notification
-from get_cookies import get_gg_deals_session
-from tax_calculations import calculate_profit, get_exchange_rates
-from database import initialize_database, save_to_database
-from extract import extract_drm_from_listing, extract_listing_details
+from modules.discord_notification import send_discord_notification
+from modules.get_cookies import get_gg_deals_session
+from modules.tax_calculations import calculate_profit, get_exchange_rates
+from modules.database import initialize_database, save_to_database
+from modules.extract import extract_drm_from_listing, extract_listing_details
 import pygame
 from modules.config import (
     NOTIFICATION_SOUND,
