@@ -9,6 +9,8 @@ from modules.tax_calculations import calculate_profit, get_exchange_rates
 from modules.database import initialize_database, save_to_database
 from modules.extract import extract_drm_from_listing, extract_listing_details
 import pygame
+import logging
+import os
 from modules.config import (
     NOTIFICATION_SOUND,
     REFRESH_RATE,
@@ -17,6 +19,9 @@ from modules.config import (
     SOUND_PROFIT,
     BASE_URL
 )
+
+# Create 'debug' folder if it doesn't exist
+os.makedirs('debug', exist_ok=True)
 
 # Initialize pygame for sound notifications
 pygame.init()
