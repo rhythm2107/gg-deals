@@ -8,6 +8,7 @@ from modules.get_cookies import get_gg_deals_session
 from modules.tax_calculations import calculate_profit, get_exchange_rates
 from modules.database import initialize_database, save_to_database
 from modules.extract import extract_drm_from_listing, extract_listing_details
+from modules.logger import get_logger
 import pygame
 import logging
 import os
@@ -22,6 +23,9 @@ from modules.config import (
 
 # Create 'debug' folder if it doesn't exist
 os.makedirs('debug', exist_ok=True)
+
+# Create a logging object
+logger = get_logger('main')
 
 # Initialize pygame for sound notifications
 pygame.init()
