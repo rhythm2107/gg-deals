@@ -50,7 +50,7 @@ SESSION_COOKIES = {
 async def fetch_html(session, url):
     async with session.get(url) as response:
         if response.status != 200:
-            print(f"Failed to fetch {url}")
+            logger.info(f"Failed to fetch {url}")
             return None
         return await response.text()
 
@@ -135,13 +135,13 @@ async def fetch_keyshops(session, game_id, listing_drm, retries=3):
 
                     return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
 
-                print(f"Attempt {attempt + 1}: Failed to fetch keyshops for game ID {game_id}, status: {response.status}")
+                logger.info(f"Attempt {attempt + 1}: Failed to fetch keyshops for game ID {game_id}, status: {response.status}")
         except (aiohttp.ClientError, ConnectionResetError) as e:
-            print(f"Attempt {attempt + 1}: Connection error while fetching keyshops for game ID {game_id}: {e}")
+            logger.info(f"Attempt {attempt + 1}: Connection error while fetching keyshops for game ID {game_id}: {e}")
 
         await asyncio.sleep(1)  # Add a short delay between retries
 
-    print(f"Failed to fetch keyshops for game ID {game_id} after {retries} attempts.")
+    logger.info(f"Failed to fetch keyshops for game ID {game_id} after {retries} attempts.")
     return None
 
 
@@ -159,17 +159,17 @@ async def process_listing(session, listing):
 
     # Ensure the current price meets the minimum price criteria
     if current_price < MIN_PRICE:
-        print(f"Skipping {game_name} due to price below MIN_PRICE: {current_price:.2f} PLN")
+        logger.info(f"Skipping {game_name} due to price below MIN_PRICE: {current_price:.2f} PLN")
         return
 
     # Save to database
     save_to_database(game_id, game_name, drm, current_price, listing_url)
-    print(f"Saved listing: {game_name} ({drm}, {current_price:.2f} PLN)")
+    logger.info(f"Saved listing: {game_name} ({drm}, {current_price:.2f} PLN)")
 
     # Fetch keyshop prices
     keyshop_data = await fetch_keyshops(session, game_id, drm)
     if not keyshop_data:
-        print(f"No keyshop data for {game_name}")
+        logger.info(f"No keyshop data for {game_name}")
         return
 
     kinguin_price = keyshop_data['kinguin_price']
@@ -206,7 +206,7 @@ async def process_listing(session, listing):
     # Sound notification for high profits
     max_profit = max(kinguin_profit or 0, g2a_profit or 0)
     if max_profit >= SOUND_PROFIT:
-        print(f"[Massive Profit!] {game_name} | Max Profit: {max_profit:.2f} PLN")
+        logger.info(f"[Massive Profit!] {game_name} | Max Profit: {max_profit:.2f} PLN")
         pygame.mixer.Sound(NOTIFICATION_SOUND).play()
 
 
@@ -229,7 +229,7 @@ async def check_new_listings():
             tasks = [process_listing(session, listing) for listing in new_listings]
             await asyncio.gather(*tasks)
 
-            print(f"Iteration finished, starting again in {REFRESH_RATE} seconds. Last check updated to {last_check}.")
+            logger.info(f"Iteration finished, starting again in {REFRESH_RATE} seconds. Last check updated to {last_check}.")
             await asyncio.sleep(REFRESH_RATE)  # Sleep for the refresh interval
 
 if __name__ == "__main__":
