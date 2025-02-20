@@ -1,0 +1,7 @@
+aiohttp==3.9.3
+beautifulsoup4==4.13.3
+pygame==2.6.0
+python-dotenv==1.1.0
+Requests==2.32.3
+selenium==4.30.0
+webdriver_manager==4.0.2
