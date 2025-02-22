@@ -57,8 +57,8 @@ DB_FILE=your_database_file.db
 # Chromedriver executable path
 CHROMEDRIVER_PATH=path/to/chromedriver.exe
 
-# List allowed DRM platforms separated by colons (e.g., steam:origin:gog)
-ALLOWED_DRMS=steam:origin:gog
+# List allowed DRM platforms separated by commas (e.g., Steam,Origin)
+ALLOWED_DRMS=Steam,Origin
 
 # Your Discord webhook URL
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK
