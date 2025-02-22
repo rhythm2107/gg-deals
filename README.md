@@ -4,7 +4,8 @@ A robust Discord notification bot that periodically scrapes [GG-Deals](https://g
 
 ## 📸 Example Notifications
 
-![Discord Notifications Example](INSERT_IMAGE_LINK_HERE)
+![Discord Notifications Example](assets/notification_example_1.png)
+![Discord Notifications Example](assets/notification_example_2.png)
 
 ---
 
