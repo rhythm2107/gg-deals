@@ -89,7 +89,7 @@ Replace placeholders (such as `your_database_file.db`, webhook URLs, and paths) 
 
 To run the bot, simply execute:
 ```bash
-python main.py
+python scanner.py
 ```
 
 ### 🔔 Notification Customization
