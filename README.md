@@ -2,6 +2,10 @@
 
 A robust Discord notification bot that periodically scrapes [GG-Deals](https://gg.deals) for the latest game offers, evaluates potential profits from reselling on platforms like Kinguin and G2A, and sends detailed notifications directly to your Discord webhook.
 
+This project is intended for **demonstration purposes only** and is **not fully functional** in its public form. Certain core components have been intentionally removed or modified to prevent misuse or unauthorized deployment.
+
+If you're a recruiter or interviewer and would like to see the complete working version, feel free to reach out — I'm happy to provide access upon request.
+
 ## 📸 Example Notifications
 
 ![Discord Notifications Example](assets/notification_example_1.png)
@@ -77,13 +81,6 @@ BASE_URL=https://gg.deals
 Replace placeholders (such as `your_database_file.db`, webhook URLs, and paths) with your actual values.
 
 ---
-
-## ▶️ Usage
-
-To run the bot, simply execute:
-```bash
-python scanner.py
-```
 
 ### 🔔 Notification Customization
 - Adjust the notification thresholds directly within the configuration to filter notifications based on profitability.
