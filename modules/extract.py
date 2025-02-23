@@ -9,7 +9,7 @@ def extract_drm_from_listing(listing_html):
     if drm_tag:
         svg_tag = drm_tag.find("svg")
         if svg_tag and "title" in svg_tag.attrs:
-            return svg_tag["title"].replace("Activates on ", "").strip()
+            return svg_tag["title"].replace("A ", "").strip()
     return None
 
 
@@ -27,6 +27,6 @@ def extract_listing_details(listing_html):
         listing_url = None
 
     # Current price
-    price = soup.find("div", class_="hoverable-box").get("data-deal-value", None)
+    price = soup.find("div", class_="hoverable-box").get("da-value", None)
 
     return game_name, listing_url, float(price) if price else None

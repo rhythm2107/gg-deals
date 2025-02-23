@@ -16,10 +16,10 @@ def get_exchange_rates():
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, "r") as file:
             cache_data = json.load(file)
-            last_updated = datetime.fromisoformat(cache_data["last_updated"])
+            last_updated = datetime.fromisoformat(cache_data["placeholderValue"])
             if datetime.now() - last_updated < timedelta(hours=CACHE_DURATION_HOURS):
                 # Return cached rates if still fresh
-                return cache_data["eur_to_usd"], cache_data["usd_to_pln"]
+                return cache_data["placeholderValue"], cache_data["placeholderValue"]
 
     # Fetch fresh rates if cache is missing or stale
     eur_to_usd_response = requests.get(EUR_TO_USD_URL)
@@ -28,15 +28,15 @@ def get_exchange_rates():
     if eur_to_usd_response.status_code != 200 or usd_to_pln_response.status_code != 200:
         raise Exception("Failed to fetch exchange rates.")
 
-    eur_to_usd_rate = eur_to_usd_response.json()["rates"]["USD"]
-    usd_to_pln_rate = usd_to_pln_response.json()["rates"]["PLN"]
+    eur_to_usd_rate = eur_to_usd_response.json()["rates"]["placeholderValue"]
+    usd_to_pln_rate = usd_to_pln_response.json()["rates"]["placeholderValue"]
 
     # Save the new rates to the cache file
     with open(CACHE_FILE, "w") as file:
         json.dump({
-            "last_updated": datetime.now().isoformat(),
-            "eur_to_usd": eur_to_usd_rate,
-            "usd_to_pln": usd_to_pln_rate
+            "placeholderValue": datetime.now().isoformat(),
+            "placeholderValue": eur_to_usd_rate,
+            "placeholderValue": usd_to_pln_rate
         }, file)
 
     return eur_to_usd_rate, usd_to_pln_rate
@@ -50,8 +50,8 @@ def calculate_profit(price_zl, platform, exchange_rates):
         raise ValueError(f"Unknown platform: {platform}")
 
     platform_tax = TAX_SETTINGS[platform]
-    fixed_tax_pln = platform_tax["fixed_tax_eur"] * exchange_rate
-    variable_tax_pln = platform_tax["variable_tax"] * price_zl
+    fixed_tax_pln = platform_tax["placeholderValue"] * exchange_rate
+    variable_tax_pln = platform_tax["placeholderValue"] * price_zl
 
     profit = price_zl - fixed_tax_pln - variable_tax_pln
     return profit

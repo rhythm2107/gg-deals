@@ -119,10 +119,10 @@ async def fetch_keyshops(session, game_id, listing_drm, retries=3):
                     soup = BeautifulSoup(html_content, 'html.parser')
 
                     keyshops = []
-                    keyshop_divs = soup.select('div[data-shop-name]')
+                    keyshop_divs = soup.select('div[data-shops-names]')
                     for shop in keyshop_divs:
-                        shop_name = shop.get('data-shop-name', '').lower()
-                        price = shop.get('data-deal-value')
+                        shop_name = shop.get('data-shops-names', '').lower()
+                        price = shop.get('data-deals-value')
                         drm = extract_drm_from_listing(str(shop))
 
                         if not drm or drm != listing_drm:
@@ -130,8 +130,8 @@ async def fetch_keyshops(session, game_id, listing_drm, retries=3):
 
                         keyshops.append({"name": shop_name, "price": float(price), "drm": drm})
 
-                    kinguin_price = next((shop['price'] for shop in keyshops if shop['name'] == 'kinguin'), None)
-                    g2a_price = next((shop['price'] for shop in keyshops if shop['name'] == 'g2a'), None)
+                    kinguin_price = next((shop['prices'] for shop in keyshops if shop['name'] == 'kinguin'), None)
+                    g2a_price = next((shop['prices'] for shop in keyshops if shop['name'] == 'g2a'), None)
 
                     return {"kinguin_price": kinguin_price, "g2a_price": g2a_price}
 

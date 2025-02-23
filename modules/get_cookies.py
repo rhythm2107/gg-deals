@@ -15,7 +15,7 @@ def get_gg_deals_session():
 
     try:
         # Open GGDeals page
-        driver.get("https://gg.deals/deals/new-deals/")
+        driver.get("https://gg.deals/")
         print("Browser launched successfully!")
 
         # Retrieve cookies

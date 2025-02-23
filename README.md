@@ -72,13 +72,6 @@ CACHE_FILE=exchange_rates.json
 
 # Base URL for GG-Deals
 BASE_URL=https://gg.deals
-
-# Notification sound file path
-NOTIFICATION_SOUND=resources/notification_sound.mp3
-
-# API endpoints for currency exchange rates (do not change unless necessary)
-EUR_TO_USD_URL=https://api.exchangerate-api.com/v4/latest/EUR
-USD_TO_PLN_URL=https://api.exchangerate-api.com/v4/latest/USD
 ```
 
 Replace placeholders (such as `your_database_file.db`, webhook URLs, and paths) with your actual values.
